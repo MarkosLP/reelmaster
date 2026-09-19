@@ -62,3 +62,39 @@ test("Presenter plan rejects gaps, reordered cuts, mismatched duration and out-o
     }),
   );
 });
+test("Presenter plan rejects unknown keys at every level, as the strict contract requires", () => {
+  assert.throws(() =>
+    PresenterEditPlanSchema.parse({ ...fixture(), approvedBy: "nobody" }),
+  );
+  const segment = fixture();
+  assert.throws(() =>
+    PresenterEditPlanSchema.parse({
+      ...segment,
+      segments: [{ ...segment.segments[0], easing: "linear" }],
+      durationFrames: 30,
+    }),
+  );
+  assert.throws(() =>
+    PresenterEditPlanSchema.parse({
+      ...fixture(),
+      captions: [
+        {
+          startFrame: 0,
+          endFrame: 30,
+          text: "test",
+          reviewedWordIds: [0],
+          timingSource: "MODEL_ESTIMATED_HUMAN_TEXT",
+          timingApproval: true,
+        },
+      ],
+    }),
+  );
+  assert.throws(() =>
+    PresenterEditPlanSchema.parse({
+      ...fixture(),
+      overlays: [
+        { startFrame: 0, endFrame: 30, kind: "checklist", opacity: 1 },
+      ],
+    }),
+  );
+});

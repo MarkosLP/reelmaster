@@ -10,32 +10,39 @@ export const PresenterEditPlanSchema = z
     durationFrames: frame.positive(),
     segments: z
       .array(
-        z.object({
-          sourceStartFrame: frame,
-          sourceEndFrame: frame.positive(),
-          outputStartFrame: frame,
-          scale: z.number().min(1).max(1.06),
-          reason: z.string().min(1),
-        }),
+        z
+          .object({
+            sourceStartFrame: frame,
+            sourceEndFrame: frame.positive(),
+            outputStartFrame: frame,
+            scale: z.number().min(1).max(1.06),
+            reason: z.string().min(1),
+          })
+          .strict(),
       )
       .min(1),
     captions: z.array(
-      z.object({
-        startFrame: frame,
-        endFrame: frame.positive(),
-        text: z.string().min(1).max(48),
-        reviewedWordIds: z.array(z.number().int().nonnegative()).min(1),
-        timingSource: z.literal("MODEL_ESTIMATED_HUMAN_TEXT"),
-      }),
+      z
+        .object({
+          startFrame: frame,
+          endFrame: frame.positive(),
+          text: z.string().min(1).max(48),
+          reviewedWordIds: z.array(z.number().int().nonnegative()).min(1),
+          timingSource: z.literal("MODEL_ESTIMATED_HUMAN_TEXT"),
+        })
+        .strict(),
     ),
     overlays: z.array(
-      z.object({
-        startFrame: frame,
-        endFrame: frame.positive(),
-        kind: z.enum(["weather-recipe", "checklist", "data-report"]),
-      }),
+      z
+        .object({
+          startFrame: frame,
+          endFrame: frame.positive(),
+          kind: z.enum(["weather-recipe", "checklist", "data-report"]),
+        })
+        .strict(),
     ),
   })
+  .strict()
   .superRefine((p, ctx) => {
     let cursor = 0,
       previousSource = 0;
