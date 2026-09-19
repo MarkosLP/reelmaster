@@ -11,6 +11,7 @@ import type { CompositionSnapshot } from "../src/snapshot/types";
 import { localBrowser } from "../src/infrastructure/audio/browser";
 import { fileHash } from "../src/infrastructure/audio/inspect";
 import { contentHash } from "../src/snapshot/hash";
+import { fingerprintSnapshot } from "../src/application/fingerprint";
 
 // Variantes del baseline sintético para decidir mirando, no discutiendo.
 // Usa tonos de prueba, nunca la voz ni la imagen de nadie.
@@ -48,6 +49,42 @@ const captions = (fontSize: number): Variant => ({
   },
 });
 
+// Reagrupa los tokens de cada escena en líneas de n palabras. Mueve tres ejes
+// de la huella a la vez: número de subtítulos, palabras por subtítulo y
+// porcentaje de tiempo con texto en pantalla.
+const regroup = (perLine: number): Variant => ({
+  name: perLine === 0 ? "estructura-sin-texto" : `estructura-texto-${perLine}`,
+  question:
+    perLine === 0
+      ? "¿Se sostiene el reel sin una sola palabra en pantalla?"
+      : `¿Cómo cambia el ritmo con ${perLine} palabra${perLine > 1 ? "s" : ""} por subtítulo?`,
+  change:
+    perLine === 0
+      ? "Sin subtítulos"
+      : `Subtítulos reagrupados a ${perLine} palabras`,
+  mutate: (s) => {
+    for (const scene of s.scenes) {
+      if (perLine === 0) {
+        scene.lines = [];
+        continue;
+      }
+      const tokens = scene.lines.flatMap((l) => l.tokens);
+      const groups: (typeof tokens)[] = [];
+      for (let i = 0; i < tokens.length; i += perLine)
+        groups.push(tokens.slice(i, i + perLine));
+      scene.lines = groups.map((group, i) => ({
+        id: `line-${i}`,
+        startFrame: group[0].startFrame,
+        // Cada línea aguanta hasta que entra la siguiente, como las originales.
+        endFrame:
+          groups[i + 1]?.[0].startFrame ??
+          Math.max(...group.map((t) => t.endFrame)),
+        tokens: group,
+      }));
+    }
+  },
+});
+
 const variants: Variant[] = [
   motif("orbit"),
   motif("cards"),
@@ -55,6 +92,9 @@ const variants: Variant[] = [
   captions(49),
   captions(56),
   captions(72),
+  regroup(2),
+  regroup(5),
+  regroup(0),
 ];
 
 const chosen = values.only
@@ -108,7 +148,15 @@ for (const [index, variant] of chosen.entries()) {
     },
   });
   const seconds = (Date.now() - started) / 1000;
+  // La huella se guarda junto al MP4: la app la lee de ahí para los reels
+  // que no tienen plan de montaje.
+  const fingerprint = fingerprintSnapshot(snapshot);
+  await writeFile(
+    resolve(directory, `${variant.name}.fingerprint.json`),
+    JSON.stringify(fingerprint, null, 2) + "\n",
+  );
   results.push({
+    fingerprint,
     name: variant.name,
     question: variant.question,
     change: variant.change,

@@ -11,6 +11,13 @@ import {
   PresenterEditReviewSchema,
   type PresenterEditReview,
 } from "../../domain/presenter-edit-review";
+import {
+  ReelFingerprintSchema,
+  type ReelFingerprint,
+  type ReelExperiment,
+} from "../../domain/reel-experiment";
+import { fingerprintPresenterPlan } from "../../application/fingerprint";
+import { readExperiments } from "./experiments";
 
 export type Reel = {
   id: string;
@@ -25,6 +32,8 @@ export type Reel = {
   planPath: string | null;
   planHash: string | null;
   review: PresenterEditReview | null;
+  fingerprint: ReelFingerprint | null;
+  experiment: ReelExperiment | null;
 };
 
 export type Production = { title: string; state: string };
@@ -33,6 +42,7 @@ export type Production = { title: string; state: string };
 // el montaje es revisable; si no, se puede ver pero no juzgar por cortes.
 export async function discoverReels(workspace: string): Promise<Reel[]> {
   const out = resolve(workspace, "out");
+  const experiments = await readExperiments(workspace);
   const reels: Reel[] = [];
   for (const phase of (await readdir(out).catch(() => [])).sort().reverse()) {
     const directory = join(out, phase);
@@ -75,7 +85,25 @@ export async function discoverReels(workspace: string): Promise<Reel[]> {
           }
         }
       }
+      // La huella sale del plan si lo hay; si no, del fichero que deja el
+      // simulador junto al MP4. Nunca se estima a ojo.
+      let fingerprint: ReelFingerprint | null = plan
+        ? fingerprintPresenterPlan(plan)
+        : null;
+      if (!fingerprint) {
+        const sidecar = await readFile(
+          videoPath.replace(/\.mp4$/, ".fingerprint.json"),
+          "utf8",
+        ).catch(() => null);
+        if (sidecar) {
+          const parsed = ReelFingerprintSchema.safeParse(JSON.parse(sidecar));
+          if (parsed.success) fingerprint = parsed.data;
+        }
+      }
+      const videoHash = await fileHash(videoPath);
       reels.push({
+        fingerprint,
+        experiment: experiments.get(videoHash) ?? null,
         id: `${phase}/${basename(file, ".mp4")}`,
         phase,
         videoPath,
@@ -83,7 +111,7 @@ export async function discoverReels(workspace: string): Promise<Reel[]> {
         durationSeconds,
         width,
         height,
-        videoHash: await fileHash(videoPath),
+        videoHash,
         plan,
         planPath,
         planHash,

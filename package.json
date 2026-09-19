@@ -20,6 +20,7 @@
     "app": "node --import ./scripts/local-only.mjs --import tsx scripts/app.ts",
     "simulate:reels": "node --import ./scripts/local-only.mjs --import tsx scripts/simulate-reels.ts",
     "simulate:drafts": "node --import ./scripts/local-only.mjs --import tsx scripts/simulate-drafts.ts",
+    "semanal": "node --import ./scripts/local-only.mjs --import tsx scripts/semanal.ts",
     "clean:workspace": "node --import ./scripts/local-only.mjs --import tsx scripts/clean-workspace.ts",
     "generate:reel": "node --import ./scripts/local-only.mjs --import tsx scripts/generate-reel.ts",
     "test:integration:text": "node --import ./scripts/local-only.mjs --import tsx scripts/integration-text.ts",

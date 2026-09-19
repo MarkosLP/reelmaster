@@ -10,6 +10,7 @@ import {
   type Reel,
   type Production,
 } from "./library";
+import { saveExperiment } from "./experiments";
 import { indexPage } from "./index-page";
 import { reviewPage } from "./page";
 import {
@@ -96,18 +97,45 @@ export async function reelApp(options: {
               height: r.height,
               plan: Boolean(r.plan),
               review: r.review,
+              fingerprint: r.fingerprint,
+              experiment: r.experiment,
             })),
           });
 
-        const match = /^r\/(.+?)\/(video\.mp4|review|plan\.json|verdict)$/.exec(
-          route,
-        );
+        const match =
+          /^r\/(.+?)\/(video\.mp4|review|plan\.json|verdict|experiment)$/.exec(
+            route,
+          );
         if (!match) return void res.writeHead(404).end();
         const reel = byId.get(match[1]);
         if (!reel) return void res.writeHead(404).end();
 
         if (match[2] === "video.mp4")
           return sendMedia(req, res, await videoOf(reel), "video/mp4");
+
+        if (match[2] === "experiment") {
+          if (req.method !== "POST") return void res.writeHead(405).end();
+          if (!reel.fingerprint)
+            return sendJson(
+              req,
+              res,
+              { error: "Este reel no tiene huella estructural que registrar" },
+              400,
+            );
+          const input = JSON.parse(
+            await readBody(req, MAX_BODY_BYTES),
+          ) as Record<string, unknown>;
+          const saved = await saveExperiment(options.workspace, {
+            reelId: reel.id,
+            videoHash: reel.videoHash,
+            fingerprint: reel.fingerprint,
+            publishedAt: (input.publishedAt as string | null) ?? null,
+            metrics: input.metrics ?? null,
+            notes: (input.notes as string) ?? "",
+          });
+          reel.experiment = saved.experiment;
+          return sendJson(req, res, { path: saved.path });
+        }
 
         if (!reel.plan || !reel.planHash) return void res.writeHead(404).end();
 
