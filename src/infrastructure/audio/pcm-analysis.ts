@@ -53,12 +53,14 @@ export function analyzePcm16(wav: Buffer) {
     energy = 0,
     peak = 0;
   for (let frame = 0; frame < sampleFrames; frame++) {
-    const values = [];
+    let left = 0,
+      right = 0;
     for (let channel = 0; channel < channels; channel++) {
       const raw = data.readInt16LE((frame * channels + channel) * 2),
         value = raw / 32768,
         stats = channelStats[channel];
-      values.push(value);
+      if (channel === 0) left = value;
+      else right = value;
       stats.peak = Math.max(stats.peak, Math.abs(value));
       stats.sum += value;
       stats.squares += value * value;
@@ -66,7 +68,7 @@ export function analyzePcm16(wav: Buffer) {
       energy += value * value;
       peak = Math.max(peak, Math.abs(value));
     }
-    if (channels === 2) cross += values[0] * values[1];
+    if (channels === 2) cross += left * right;
     if ((frame + 1) % windowFrames === 0 || frame === sampleFrames - 1) {
       const start = Math.floor(frame / windowFrames) * windowFrames,
         count = frame - start + 1;
