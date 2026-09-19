@@ -114,11 +114,13 @@ test("rendering the same frame twice produces byte-identical pixels", async () =
 });
 
 test("the three typography motifs render as three different frames", async () => {
-  const hashes = await Promise.all(
-    (["orbit", "cards", "signal"] as const).map(async (motif) =>
-      fileHash(await still(withMotif(motif), `motif-${motif}`)),
-    ),
-  );
+  // En serie a propósito: tres navegadores a la vez compiten por la máquina y
+  // el render deja de ser fiable si algo pesado corre en paralelo.
+  const hashes: string[] = [];
+  for (const motif of ["orbit", "cards", "signal"] as const)
+    hashes.push(
+      await fileHash(await still(withMotif(motif), `motif-${motif}`)),
+    );
   assert.equal(new Set(hashes).size, 3, "dos motivos se pintan igual");
 });
 
