@@ -1,4 +1,10 @@
-# ReelMaster · FASE 1F
+# ReelMaster
+
+**Estado actual: fase 1K entregada, pendiente de valoración audiovisual humana.** El reel con Marcos como presentador está en `out/phase-1k/reel-1k-marcos.mp4` (23,933 s · 1080 × 1920 · 30 fps). No consta aprobación temporal ni final. [Informe 1K](docs/phase-1k-report.md) · [Contrato 1K](docs/presenter-edit-phase-1k.md).
+
+Las secciones siguientes documentan cada fase por separado; las más recientes están al final.
+
+## Imagen IA local · FASE 1F
 
 Arquitectura de imagen IA local preparada; generación real **unavailable**. La auditoría detectó RTX 2060 de 6 GB y ningún runtime/checkpoint de imagen utilizable en las ubicaciones revisadas. No se ha descargado ni instalado ningún modelo. [Auditoría e informe 1F](docs/phase-1f-report.md) · [Contrato 1F](docs/image-phase-1f.md).
 
@@ -76,3 +82,35 @@ Integración opcional mediante `ImageGenerationProvider`, con ComfyUI y el check
 ## Dirección y revisión editorial · FASE 1H
 
 El flujo optativo `quality:images` crea VisualDirection con Ollama local, construye prompts v2 y mantiene un máximo de dos candidatos por concepto. Una inspección de Codex y una decisión humana final quedan separadas; solo ACCEPT humano permite asignar el asset. `demo:quality -- --technical` exige al menos dos imágenes aceptadas. [Contrato, configuración y comandos](docs/image-phase-1h.md) · [Informe final](docs/phase-1h-report.md).
+
+## Reel con voz real · FASES 1I y 1I-V2
+
+Primer recorrido completo desde la idea hasta un reel con la voz real de Marcos, y una segunda variante visual del mismo reel. Ambas entregadas para valoración humana: **PASS WITH ISSUES** en 1I, **CLOSE BUT NEEDS POLISH** en 1I-v2, con mejora comprobada en redundancia, variedad y evolución visual. [Informe 1I](docs/phase-1i-report.md) · [Informe 1I-V2](docs/phase-1i-v2-report.md).
+
+Salidas en `out/phase-1i/reel-1i-marcos.mp4` y `out/phase-1i-v2/reel-1i-v2-marcos.mp4`.
+
+## Presentador real · FASE 1J
+
+Grabación vertical real → PresenterAsset preparado, con el vídeo copiado sin recodificar y el audio normalizado a −18 LUFS con techo de true peak. No monta un reel ni autoriza su uso editorial: `approvedForMontage` permanece en `false`. [Contrato 1J](docs/presenter-phase-1j.md) · [Informe 1J](docs/phase-1j-report.md).
+
+```powershell
+npm run prepare:presenter -- --source .local/presenters/presenter-marcos/originals/VideoSelfie.mp4 --presenter presenter-marcos
+```
+
+Originales y preparados viven bajo `.local/presenters/<presenterId>/`, fuera de Git. La aceptación de la receta es técnica y no sustituye una escucha.
+
+## Montaje de presentador · FASE 1K
+
+`PresenterEditPlan` describe cortes conjuntos de audio y vídeo sobre una base de 30 fps; la composición recibe decisiones ya resueltas y no decide qué cortar. Cinco segmentos, veinte captions y tres apoyos producen 718 frames de salida. [Contrato 1K](docs/presenter-edit-phase-1k.md) · [Informe 1K](docs/phase-1k-report.md).
+
+```powershell
+npm run render:presenter -- --plan .local/phase-1k/edit-plan.json --video <preparado.mp4> --output .local/phase-1k/work/rendered-silent.mp4
+```
+
+Entrada y salida deben quedar dentro de `.local/`, resueltas con `realpath`. El vídeo se sirve al renderer por el servidor privado en loopback con allowlist y hash; al bundle solo se copia la fuente tipográfica pública.
+
+La revisión del texto por una persona **no** convierte sus tiempos en alineación humana: los captions siguen etiquetados `MODEL_ESTIMATED_HUMAN_TEXT`. La verificación registrada cubre decodificación, sincronía, loudness, ausencia de frames negros y correspondencia de captions; la escucha humana sigue pendiente.
+
+## Auditoría externa
+
+Revisión independiente del 19/09/2026 y registro de los arreglos aplicados: [auditoría](docs/auditoria-2026-09-19.md) · [arreglos](docs/auditoria-2026-09-19-arreglos.md).

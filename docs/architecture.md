@@ -62,6 +62,14 @@ Node fijado a 22.19.x en engines y 22.19.0 en .nvmrc. Remotion y dependencias ex
 
 ESLint prohíbe Date.now, Math.random, fetch, Date global e imports de infraestructura, dominio, compilador, hashing Node y node:* en composición. Estas reglas cubren usos directos, no son una sandbox ni analizador de flujos para alias maliciosos. La composición actual no tiene tales usos. No se promete identidad binaria entre sistemas; worker futuro fijará SO/navegador/encoder y digest de bundle/fuentes. El render registra Node, Remotion y hash de snapshot; igualdad del snapshot está probada, igualdad binaria de MP4 no.
 
+## Ciclo de vida de una producción
+
+`transitionProduction` admite exactamente un camino: `draft` → `waitingForNarration` → `narrationReady` → `prepared` → `renderable` → `rendered`. Cada estado añade procedencia y no la suelta: `narrationReady` incorpora el recibo de importación, `prepared` y `renderable` el hash del reel preparado, y `rendered` el hash del vídeo.
+
+`rendered` no tiene aristas de salida, y es deliberado. El plan acredita un vídeo concreto mediante una cadena de hashes; devolverlo a un estado anterior dejaría esa cadena describiendo un artefacto que ya no corresponde al plan. Volver a grabar o reeditar es, por tanto, una producción nueva, con su propio identificador y su propia cadena. No es una limitación pendiente de resolver: es lo que hace que un recibo signifique algo.
+
+Las operaciones que mutan una producción se serializan con `withProductionLock`, que escribe en `.operation.lock` el PID, el host y el instante de adquisición. Un lock cuyo proceso ya no existe en este host se reclama, igual que uno que supere las doce horas —lo que acota la reutilización de PID—. Si sigue vivo, el error nombra al dueño y la ruta exacta del archivo. Un lock ilegible se considera retenido hasta cumplir ese mismo plazo, para no descartar por corrupción uno que esté en uso.
+
 ## FUTURE ARCHITECTURE — no implementada
 
 La voz predeterminada del producto es Marcos. Su futura imagen/avatar también será identidad predeterminada. Un AvatarProfile independiente de proveedor y nuevos tipos de visual se introducirán cuando corresponda; no existen aquí. Sustituir el audio grabado por futuros artifacts sintetizados mantendrá voice-marcos y el contrato SceneAudio; no se asociará el ID de Marcos a una empresa externa.

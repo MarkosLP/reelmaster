@@ -15,15 +15,15 @@ cambios; `local-files.ts` en particular se reescribió y ya no coincide.
 | P1 · Lock huérfano en `withProductionLock`             | Corregido                                                                          |
 | P1 · `format:check` en rojo                            | Corregido                                                                          |
 | P2 · `presenter-edit.ts` sin `.strict()`               | Corregido                                                                          |
-| P2 · README tres fases por detrás                      | Pendiente                                                                          |
-| P2 · Motivo `signal` sin implementar                   | Pendiente — requiere decisión                                                      |
-| P2 · Incoherencia wav/mp3                              | Pendiente — requiere decisión                                                      |
-| P2 · Composición sin tests de render                   | Pendiente                                                                          |
+| P2 · README tres fases por detrás                      | Corregido                                                                          |
+| P2 · Motivo `signal` sin implementar                   | Corregido — se implementa                                                          |
+| P2 · Incoherencia wav/mp3                              | Corregido — el dominio se estrecha a WAV                                           |
+| P2 · Composición sin tests de render                   | Corregido                                                                          |
 | P3 · `render-presenter.ts` sin `realpath`              | Corregido                                                                          |
 | P3 · `defaultProps` inválidos en `presenter-index.tsx` | Corregido                                                                          |
-| P3 · Máquina de estados terminal                       | Pendiente — requiere decisión                                                      |
-| P3 · Heurística de subtítulos fija                     | Pendiente                                                                          |
-| P3 · Rendimiento de `analyzePcm16`                     | Pendiente                                                                          |
+| P3 · Máquina de estados terminal                       | Documentado como deliberado                                                        |
+| P3 · Heurística de subtítulos fija                     | Corregido                                                                          |
+| P3 · Rendimiento de `analyzePcm16`                     | Corregido                                                                          |
 | P3 · Higiene de `out/` y `.local/`                     | Pendiente — borrar archivos no es reversible                                       |
 
 ## Lo corregido
@@ -110,29 +110,67 @@ esquema habría rechazado: hashes vacíos y `segments: []` frente a un `.min(1)`
 Ahora son un plan mínimo válido. `videoUrl` sigue siendo `""`: no hay ninguna URL
 válida en el estudio, porque el servidor privado solo existe durante el render.
 
-## Pendiente, y por qué
+## Segunda tanda: las decisiones
 
-Requieren una decisión de Marcos y Codex, no un arreglo:
+La auditoría dejó tres puntos esperando una decisión. Se tomaron así.
 
-- **mp3.** `compile.ts` y el dominio lo aceptan; `private-server.ts` solo sirve
-  `.wav`. Hay que decidir si se soporta —y entonces servirlo— o si se retira del
-  dominio. Mientras tanto, un reel con mp3 compila y falla en render.
-- **Motivo `signal`.** Hoy se pinta igual que `orbit`. Implementarlo o retirarlo
-  del dominio y de `demo.ts`.
-- **Estado `rendered` terminal.** Si la inmutabilidad de procedencia es deliberada,
-  merece decirse en `architecture.md`; si no, hace falta una arista de vuelta.
+### mp3: se retira del dominio
 
-Quedan también, por volumen de trabajo más que por duda:
+`compile.ts` aceptaba rutas de asset `.wav` o `.mp3` y `ReelSchema` admitía `audio/mpeg`, pero el servidor privado solo sirve `.wav`. La comprobación decide el caso: **toda** ruta de audio del pipeline se construye como `audio/<id>.wav`, en `import-recording.ts`, `prepare.ts` y `audio.ts`, y `prepared-reel.ts` ya lo exigía en dos sitios. Ningún dato real contiene `audio/mpeg` ni existe un solo `.mp3` bajo `.local/`.
 
-- **Tests de render de la composición**, el hueco de cobertura más grande: ~1.050
-  líneas de React sin un solo `renderStill` en la suite.
-- **README e informes de 1J y 1K.**
-- **Heurística de subtítulos** desacoplada de `fontSize`.
-- **Rendimiento de `analyzePcm16`.**
+Era una rama inalcanzable cuyo único efecto posible era la trampa descrita: compilar bien y reventar en render. El dominio se estrecha a WAV.
 
-La limpieza de `out/` y de los 18 directorios `presenter-test-*` y
-`recording-path-test-*` de `.local/` (~70 MB) no se ejecutó: borrar archivos no es
-reversible y conviene confirmarlo antes.
+Los mp3 **de entrada** siguen aceptándose: `inspectRecording` los admite junto a M4A, FLAC y OGG, y los normaliza a WAV al importarlos. Lo que desaparece es la posibilidad de declarar un artefacto mp3 que el render no podría servir.
+
+### `signal`: se implementa
+
+La alternativa era retirarlo del dominio, pero eso obligaba a tocar `demo.ts` y, con ello, el snapshot versionado y su hash. Implementarlo no altera ningún dato: solo el renderizador.
+
+`signal` pasa a ser tres anillos discontinuos que se expanden de 190 px a 620 px y se desvanecen al crecer, sin rotación. Se distingue de `orbit` en un fotograma fijo —trazo discontinuo, radios distintos— y en movimiento, que es donde vive un reel. El diseño es una propuesta, no una especificación recuperada: si no es lo que se buscaba, cambiarlo es tocar una función de veinte líneas.
+
+### `rendered` terminal: se documenta como deliberado
+
+La máquina de estados es estrictamente lineal y cada estado acumula procedencia: `narrationReady` añade el recibo, `prepared` y `renderable` el hash del reel preparado, `rendered` el hash del vídeo. Devolver un plan a un estado anterior dejaría esa cadena describiendo un artefacto que ya no le corresponde.
+
+No se añade ninguna arista de vuelta. Se documenta en [architecture.md](architecture.md), en una sección nueva sobre el ciclo de vida, junto al comportamiento del lock.
+
+## Segunda tanda: el resto
+
+### Tests de render de la composición
+
+Era el hueco de cobertura más grande: ~1.050 líneas de React sin un solo `renderStill` en la suite. `tests/composition-render.test.ts` renderiza de verdad y compara los bytes del PNG.
+
+No fija ningún hash dorado: dependería de la versión del navegador y se rompería en la primera actualización. Comprueba relaciones entre renders producidos en la misma ejecución —el perfil declarado, que repetir un fotograma da bytes idénticos, que los tres motivos tipográficos salen distintos, que los acentos llegan al fotograma, que apagar el resaltado cambia la banda de subtítulos— más una comprobación absoluta: el píxel del fondo es `#101116`, el del tema, leído con el propio ffmpeg del proyecto.
+
+El test de los tres motivos es el que no habría pasado antes de implementar `signal`. Seis pruebas, unos 12 segundos.
+
+Un detalle costó un intento: las props resueltas viajan dentro de la composición, no solo en `inputProps`, así que cada snapshot hay que resolverlo por separado o se renderiza el de partida. `render-baseline.ts` ya lo hacía así para el caso español.
+
+### Heurística de subtítulos
+
+El límite era fijo —4 palabras y 26 caracteres— sin relación con `captionStyle.fontSize`, que el esquema admite entre 24 y 72. Ahora se deriva de la caja real: 900 px menos 24 px de relleno por token, con una cota superior prudente de 0,62 em para el avance de ReelSans.
+
+La derivación devuelve exactamente 26 a `fontSize` 49, el tamaño de la demo: el número fijo estaba ajustado a ese tamaño y nunca se revisó. A 56, el que usan las rutas de Marcos, el presupuesto baja a 23; con 26 la línea más ancha se iba a unos 999 px sobre una caja de 900. A 72 baja a 18.
+
+Esto cambia el agrupado de líneas en preparaciones nuevas; no toca ningún artefacto ya generado. `prepareCaptionLines` recibe ahora el tamaño de fuente de forma explícita, y `marcos.test.ts` comprueba contra el presupuesto derivado del propio tema en lugar de contra un 26 escrito a mano.
+
+### `analyzePcm16`
+
+El array por fotograma solo servía para la correlación estéreo. Sustituido por dos escalares: ~1,15 M de asignaciones menos en 24 s a 48 kHz, con el mismo resultado.
+
+### Documentación
+
+El README ya no se titula «FASE 1F»: declara el estado real —1K entregada, pendiente de valoración humana— y documenta 1I, 1I-v2, 1J y 1K.
+
+[phase-1j-report.md](phase-1j-report.md) y [phase-1k-report.md](phase-1k-report.md) son informes **reconstruidos a partir de los artefactos**, no redactados por quien ejecutó las fases, y lo dicen en su primera línea. Recogen lo que `asset.json`, `edit-plan.json` y `verification.json` acreditan, y enumeran lo que no. El SHA-256 del MP4 entregado se recalculó el 19/09/2026 y coincide.
+
+## Pendiente
+
+La limpieza de `out/` y de los 18 directorios `presenter-test-*` y `recording-path-test-*` de `.local/` (~70 MB) sigue sin ejecutarse. Borrar ahí no es reversible: git no cubre ninguno de los dos directorios y `out/` contiene el único ejemplar del vídeo entregado. Conviene confirmarlo antes.
+
+El respaldo de `.local/` sigue siendo manual y pendiente, y es la mayor parte del P0.
+
+Los tests de render dejan su bundle en `.local/render-tests/`, un directorio fijo que se limpia al empezar cada ejecución en lugar de acumular uno por corrida.
 
 ## Verificación
 
@@ -142,9 +180,8 @@ Tras los cambios, en local:
 | ------------------------ | ---------------------------- |
 | `npm run typecheck`      | 0                            |
 | `npm run lint`           | 0                            |
-| `npm test`               | 165/165                      |
+| `npm test`               | 173/173                      |
 | `npm run format:check`   | 0                            |
 | `npm run build:renderer` | 0, con el cortafuegos activo |
 
-No se volvió a renderizar el vídeo de la fase 1K ni se repitió su verificación de
-hash; el último recálculo es el registrado en la auditoría.
+No se volvió a renderizar el vídeo de la fase 1K; sí se recalculó su SHA-256, que coincide con el documentado.
