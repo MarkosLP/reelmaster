@@ -15,7 +15,7 @@ const request = {
 };
 async function serverFor(
   chat: (req: http.IncomingMessage, res: http.ServerResponse) => void,
-  options: { remote?: boolean; absent?: boolean } = {},
+  options: { remote?: boolean; absent?: boolean; thinking?: boolean } = {},
 ) {
   const server = http.createServer((req, res) => {
     res.setHeader("Content-Type", "application/json");
@@ -32,7 +32,11 @@ async function serverFor(
         JSON.stringify(
           options.remote
             ? { remote_host: "https://remote" }
-            : { capabilities: ["completion"] },
+            : {
+                capabilities: options.thinking
+                  ? ["completion", "thinking"]
+                  : ["completion"],
+              },
         ),
       );
     else if (req.url === "/api/chat") chat(req, res);
@@ -235,6 +239,41 @@ test("Malformed envelope, HTTP failure, oversized response and truncation are ty
       });
     } finally {
       await local.close();
+    }
+  }
+});
+test("a reasoning model is told not to think, and a plain one is not told anything", async () => {
+  // Un modelo de razonamiento vuelca su cadena de pensamiento en otro campo y
+  // deja la respuesta vacía hasta agotar el límite: hay que apagarlo. Pero el
+  // campo solo vale para quien declara la capacidad; al resto le da un 400.
+  for (const thinking of [true, false]) {
+    let payload: Record<string, unknown> = {};
+    const harness = await serverFor(
+      (req, res) => {
+        const chunks: Buffer[] = [];
+        req.on("data", (c: Buffer) => chunks.push(c));
+        req.on("end", () => {
+          payload = JSON.parse(
+            Buffer.concat(chunks).toString(),
+          ) as typeof payload;
+          res.end(
+            JSON.stringify({
+              model: "test:local",
+              done: true,
+              message: { content: "{}" },
+            }),
+          );
+        });
+      },
+      { thinking },
+    );
+    try {
+      const provider = await OllamaTextAdapter.connect(harness.config);
+      await provider.generateStructured(request);
+      assert.equal("think" in payload, thinking);
+      if (thinking) assert.equal(payload.think, false);
+    } finally {
+      await harness.close();
     }
   }
 });

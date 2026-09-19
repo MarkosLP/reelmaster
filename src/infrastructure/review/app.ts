@@ -4,7 +4,12 @@ import { randomBytes } from "node:crypto";
 import { resolve } from "node:path";
 import { atomicJson, privateRoot } from "../production/local-files";
 import { PresenterEditReviewSchema } from "../../domain/presenter-edit-review";
-import { discoverReels, discoverProductions, type Reel } from "./library";
+import {
+  discoverReels,
+  discoverProductions,
+  type Reel,
+  type Production,
+} from "./library";
 import { indexPage } from "./index-page";
 import { reviewPage } from "./page";
 import {
@@ -23,13 +28,27 @@ export async function reelApp(options: {
   workspace: string;
   reviewer: string;
 }) {
-  const reels = await discoverReels(options.workspace);
-  const productions = await discoverProductions(options.workspace);
   const reviewsRoot = await privateRoot(options.workspace, "reviews");
-  const byId = new Map<string, Reel>(reels.map((r) => [r.id, r]));
   const loaded = new Map<string, Buffer>();
   const token = randomBytes(24).toString("hex");
   const prefix = `/${token}/`;
+
+  // La biblioteca se reescanea sola: un render nuevo aparece sin reiniciar.
+  // El sondeo de cada MP4 cuesta, así que se sostiene unos segundos.
+  const CACHE_MS = 4000;
+  let reels: Reel[] = [];
+  let productions: Production[] = [];
+  let byId = new Map<string, Reel>();
+  let scannedAt = 0;
+  async function library() {
+    if (Date.now() - scannedAt < CACHE_MS) return { reels, productions };
+    reels = await discoverReels(options.workspace);
+    productions = await discoverProductions(options.workspace);
+    byId = new Map(reels.map((r) => [r.id, r]));
+    scannedAt = Date.now();
+    return { reels, productions };
+  }
+  await library();
 
   async function videoOf(reel: Reel) {
     let bytes = loaded.get(reel.id);
@@ -62,11 +81,12 @@ export async function reelApp(options: {
         if (route === "" || route === "index.html")
           return sendPage(req, res, indexPage());
 
+        const current = await library();
         if (route === "api/library.json")
           return sendJson(req, res, {
             reviewer: options.reviewer,
-            productions,
-            reels: reels.map((r) => ({
+            productions: current.productions,
+            reels: current.reels.map((r) => ({
               id: r.id,
               phase: r.phase,
               name: r.id.split("/")[1],
@@ -142,8 +162,12 @@ export async function reelApp(options: {
     throw new Error("Missing loopback address");
   return {
     url: `http://127.0.0.1:${address.port}${prefix}`,
-    reels,
-    productions,
+    get reels() {
+      return reels;
+    },
+    get productions() {
+      return productions;
+    },
     close: async () => {
       server.closeAllConnections();
       await new Promise<void>((ok, fail) =>

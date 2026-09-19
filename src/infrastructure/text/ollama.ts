@@ -168,6 +168,11 @@ export class OllamaTextAdapter implements TextProvider {
   private constructor(
     private readonly config: OllamaConfig,
     readonly info: TextProviderInfo,
+    // Los modelos de razonamiento vuelcan su cadena de pensamiento en un campo
+    // aparte y dejan la respuesta vacía hasta agotar el límite de tokens. Aquí
+    // se pide que no piensen. El campo solo se envía cuando el modelo declara
+    // esa capacidad: mandárselo a uno que no la tiene es un 400.
+    private readonly thinks: boolean,
   ) {}
   static async connect(rawConfig: OllamaConfig, signal?: AbortSignal) {
     const config = validateOllamaConfig(rawConfig);
@@ -206,6 +211,9 @@ export class OllamaTextAdapter implements TextProvider {
         "CONFIGURATION",
         "Remote or unknown model configuration forbidden",
       );
+    const capabilities = z
+      .object({ capabilities: z.array(z.string()).max(32) })
+      .safeParse(details);
     return new OllamaTextAdapter(
       config,
       Object.freeze({
@@ -214,6 +222,8 @@ export class OllamaTextAdapter implements TextProvider {
         modelDigest: model.digest,
         version: version.data.version,
       }),
+      capabilities.success &&
+        capabilities.data.capabilities.includes("thinking"),
     );
   }
   async generateStructured(
@@ -227,6 +237,7 @@ export class OllamaTextAdapter implements TextProvider {
         {
           model: this.info.model,
           stream: false,
+          ...(this.thinks ? { think: false } : {}),
           format: request.schema,
           messages: [
             { role: "system", content: request.system },
