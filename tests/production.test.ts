@@ -8,9 +8,12 @@ import {
   open,
   readdir,
   unlink,
+  utimes,
 } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { randomUUID } from "node:crypto";
+import { spawnSync } from "node:child_process";
+import { hostname } from "node:os";
 import { locateRecording } from "../src/infrastructure/audio/inspect";
 import {
   createProductionPlan,
@@ -579,6 +582,59 @@ test("Production operation lock prevents concurrent mutations", async () => {
       { code: "BUSY" },
     );
   });
+});
+test("A live lock names its holder and the file to delete", async () => {
+  const lockPath = resolve(destination, ".operation.lock");
+  await withProductionLock(destination, async () => {
+    await assert.rejects(
+      withProductionLock(destination, async () => undefined),
+      (error: Error) =>
+        error.message.includes(`pid ${process.pid}`) &&
+        error.message.includes(lockPath),
+    );
+  });
+});
+test("A lock whose owner process is gone is reclaimed instead of blocking forever", async () => {
+  const lockPath = resolve(destination, ".operation.lock");
+  const departed = spawnSync(process.execPath, ["-e", ""]).pid;
+  await writeFile(
+    lockPath,
+    JSON.stringify({
+      pid: departed,
+      host: hostname(),
+      since: new Date().toISOString(),
+    }),
+  );
+  assert.equal(await withProductionLock(destination, async () => "ran"), "ran");
+  await assert.rejects(readFile(lockPath), { code: "ENOENT" });
+});
+test("A lock older than its lifetime is reclaimed even while its owner still runs", async () => {
+  const lockPath = resolve(destination, ".operation.lock");
+  await writeFile(
+    lockPath,
+    JSON.stringify({
+      pid: process.pid,
+      host: hostname(),
+      since: new Date(Date.now() - 13 * 60 * 60 * 1000).toISOString(),
+    }),
+  );
+  assert.equal(await withProductionLock(destination, async () => "ran"), "ran");
+  await assert.rejects(readFile(lockPath), { code: "ENOENT" });
+});
+test("An unreadable recent lock still blocks, and is released after its lifetime", async () => {
+  const lockPath = resolve(destination, ".operation.lock");
+  await writeFile(lockPath, "not json");
+  await assert.rejects(
+    withProductionLock(destination, async () => undefined),
+    { code: "BUSY" },
+  );
+  await utimes(
+    lockPath,
+    new Date(),
+    new Date(Date.now() - 13 * 60 * 60 * 1000),
+  );
+  assert.equal(await withProductionLock(destination, async () => "ran"), "ran");
+  await assert.rejects(readFile(lockPath), { code: "ENOENT" });
 });
 test("Failed file import preserves waiting state and leaves no accepted receipt", async () => {
   const changed = { ...draft, title: `Failed import ${runId}` };
