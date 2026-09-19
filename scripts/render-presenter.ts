@@ -1,5 +1,12 @@
-import { readFile, mkdir, copyFile, access, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import {
+  readFile,
+  mkdir,
+  copyFile,
+  access,
+  writeFile,
+  realpath,
+} from "node:fs/promises";
+import { resolve, relative, isAbsolute, dirname, basename } from "node:path";
 import { parseArgs } from "node:util";
 import { bundle } from "@remotion/bundler";
 import { getCompositions, renderMedia, renderStill } from "@remotion/renderer";
@@ -18,15 +25,32 @@ const { values } = parseArgs({
 });
 if (!values.plan || !values.video || !values.output)
   throw Error("--plan --video --output required");
-const planPath = resolve(values.plan),
-  videoPath = resolve(values.video),
-  output = resolve(values.output);
 const workspace = resolve(".");
-for (const path of [planPath, videoPath])
-  if (!path.startsWith(resolve(".local") + "\\"))
-    throw Error("Private input required");
-if (!output.startsWith(resolve(".local") + "\\"))
-  throw Error("Private intermediate output required");
+const privateRoot = await realpath(resolve(".local"));
+async function assertPrivate(path: string, kind: "input" | "output") {
+  if (path.startsWith("\\\\") || path.startsWith("//"))
+    throw Error("Network paths are forbidden");
+  let canonical: string;
+  try {
+    canonical =
+      kind === "input"
+        ? await realpath(path)
+        : resolve(await realpath(dirname(path)), basename(path));
+  } catch {
+    throw Error(`Cannot resolve the ${kind} path: ${path}`);
+  }
+  const part = relative(privateRoot, canonical);
+  if (!part || part.startsWith("..") || isAbsolute(part))
+    throw Error(
+      kind === "input"
+        ? "Private input required"
+        : "Private intermediate output required",
+    );
+  return canonical;
+}
+const planPath = await assertPrivate(resolve(values.plan), "input"),
+  videoPath = await assertPrivate(resolve(values.video), "input"),
+  output = await assertPrivate(resolve(values.output), "output");
 try {
   await access(output);
   throw Error("Output already exists");
