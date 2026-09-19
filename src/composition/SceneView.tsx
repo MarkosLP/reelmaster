@@ -31,6 +31,35 @@ export function SceneView({
   const y = interpolate(frame, [0, 22], [65, 0], { extrapolateRight: "clamp" });
   const group = lineAt(scene.lines, frame)?.tokens ?? [];
   const captionStyle = theme.captionStyle;
+  // Cada motivo debe distinguirse ya en un fotograma fijo, no solo en movimiento.
+  const shapeAt = (i: number) => {
+    const orbiting = {
+      opacity: 1 - i * 0.25,
+      borderStyle: "solid" as const,
+      transform: `rotate(${frame * 0.22 + i * 24}deg) scale(${1 + Math.sin(frame / 25 + i) * 0.035})`,
+    };
+    if (motif === "cards")
+      return { width: 500, height: 220, borderRadius: 30, ...orbiting };
+    if (motif === "signal") {
+      const wave = (frame / 36 + i / 3) % 1,
+        size = 190 + wave * 430;
+      return {
+        width: size,
+        height: size,
+        borderRadius: "50%" as const,
+        borderStyle: "dashed" as const,
+        opacity: 1 - wave,
+        transform: "none",
+      };
+    }
+    const size = 260 + i * 130;
+    return {
+      width: size,
+      height: size,
+      borderRadius: "50%" as const,
+      ...orbiting,
+    };
+  };
   return (
     <AbsoluteFill
       style={{
@@ -84,12 +113,9 @@ export function SceneView({
             key={i}
             style={{
               position: "absolute",
-              width: motif === "cards" ? 500 : 260 + i * 130,
-              height: motif === "cards" ? 220 : 260 + i * 130,
-              border: `${i === 0 ? 4 : 2}px solid ${scene.accent}`,
-              borderRadius: motif === "cards" ? 30 : "50%",
-              opacity: 1 - i * 0.25,
-              transform: `rotate(${frame * 0.22 + i * 24}deg) scale(${1 + Math.sin(frame / 25 + i) * 0.035})`,
+              borderWidth: i === 0 ? 4 : 2,
+              borderColor: scene.accent,
+              ...shapeAt(i),
             }}
           />
         ))}
