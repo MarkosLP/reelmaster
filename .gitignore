@@ -1,0 +1,10 @@
+node_modules/
+out/
+build/
+.env*
+!.env.example
+VozMarcos*
+VideoSelfie*
+.local/
+__pycache__/
+*.pyc

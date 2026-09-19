@@ -1,0 +1,14 @@
+{
+  "voice-0": {
+    "path": "audio/scene-0.wav",
+    "contentHash": "cdaed3389f7e7960b12b2421e95b0a3cef3902fa30bdcc1a402b48a00566e8f9"
+  },
+  "voice-1": {
+    "path": "audio/scene-1.wav",
+    "contentHash": "874fbb06704509423af7009640198edb99670bd399882225684305940ca344e2"
+  },
+  "voice-2": {
+    "path": "audio/scene-2.wav",
+    "contentHash": "9fa4aa45429273815c540087f37ee61284eff997e71281ba5cb291b321a4712a"
+  }
+}

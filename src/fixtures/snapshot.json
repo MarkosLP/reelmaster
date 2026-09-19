@@ -1,0 +1,242 @@
+{
+  "version": 1,
+  "templateVersion": "typography-v2",
+  "profile": {
+    "id": "instagram-reel-v1",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "durationInFrames": 360,
+  "theme": {
+    "background": "#101116",
+    "foreground": "#F4F4F0",
+    "captionStyle": {
+      "fontSize": 49,
+      "textColor": "#FFFFFF",
+      "activeTextColor": "#101116",
+      "activeBackground": "#C6FF6B"
+    }
+  },
+  "scenes": [
+    {
+      "id": "scene-0",
+      "startFrame": 0,
+      "durationFrames": 120,
+      "fadeFrames": 10,
+      "headline": "Tu próxima idea.\nCon superpoderes.",
+      "label": "01 / DESCUBRE",
+      "accent": "#C6FF6B",
+      "visual": {
+        "kind": "typography",
+        "motif": "orbit"
+      },
+      "audio": {
+        "src": "audio/scene-0.wav",
+        "volume": 0.3
+      },
+      "lines": [
+        {
+          "id": "line-0",
+          "startFrame": 9,
+          "endFrame": 48,
+          "tokens": [
+            {
+              "id": "token-0",
+              "text": "¿Sabías",
+              "startFrame": 12,
+              "endFrame": 20
+            },
+            {
+              "id": "token-1",
+              "text": "que",
+              "startFrame": 24,
+              "endFrame": 32
+            },
+            {
+              "id": "token-2",
+              "text": "la",
+              "startFrame": 36,
+              "endFrame": 44
+            }
+          ]
+        },
+        {
+          "id": "line-1",
+          "startFrame": 48,
+          "endFrame": 111,
+          "tokens": [
+            {
+              "id": "token-3",
+              "text": "IA",
+              "startFrame": 48,
+              "endFrame": 56
+            },
+            {
+              "id": "token-4",
+              "text": "puede",
+              "startFrame": 60,
+              "endFrame": 68
+            },
+            {
+              "id": "token-5",
+              "text": "hacer",
+              "startFrame": 72,
+              "endFrame": 80
+            },
+            {
+              "id": "token-6",
+              "text": "esto?",
+              "startFrame": 84,
+              "endFrame": 92
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scene-1",
+      "startFrame": 120,
+      "durationFrames": 120,
+      "fadeFrames": 10,
+      "headline": "Escribe.\nInvestiga.\nConstruye.",
+      "label": "02 / EXPLORA",
+      "accent": "#AD9FFF",
+      "visual": {
+        "kind": "typography",
+        "motif": "cards"
+      },
+      "audio": {
+        "src": "audio/scene-1.wav",
+        "volume": 0.3
+      },
+      "lines": [
+        {
+          "id": "line-0",
+          "startFrame": 9,
+          "endFrame": 60,
+          "tokens": [
+            {
+              "id": "token-0",
+              "text": "Puede",
+              "startFrame": 12,
+              "endFrame": 20
+            },
+            {
+              "id": "token-1",
+              "text": "ayudarte",
+              "startFrame": 24,
+              "endFrame": 32
+            },
+            {
+              "id": "token-2",
+              "text": "a",
+              "startFrame": 36,
+              "endFrame": 44
+            },
+            {
+              "id": "token-3",
+              "text": "escribir,",
+              "startFrame": 48,
+              "endFrame": 56
+            }
+          ]
+        },
+        {
+          "id": "line-1",
+          "startFrame": 60,
+          "endFrame": 111,
+          "tokens": [
+            {
+              "id": "token-4",
+              "text": "investigar",
+              "startFrame": 60,
+              "endFrame": 68
+            },
+            {
+              "id": "token-5",
+              "text": "y",
+              "startFrame": 72,
+              "endFrame": 80
+            },
+            {
+              "id": "token-6",
+              "text": "programar.",
+              "startFrame": 84,
+              "endFrame": 92
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scene-2",
+      "startFrame": 240,
+      "durationFrames": 120,
+      "fadeFrames": 10,
+      "headline": "Esto solo es\nel principio.",
+      "label": "03 / IMAGINA",
+      "accent": "#FFAD85",
+      "visual": {
+        "kind": "typography",
+        "motif": "signal"
+      },
+      "audio": {
+        "src": "audio/scene-2.wav",
+        "volume": 0.3
+      },
+      "lines": [
+        {
+          "id": "line-0",
+          "startFrame": 9,
+          "endFrame": 60,
+          "tokens": [
+            {
+              "id": "token-0",
+              "text": "Y",
+              "startFrame": 12,
+              "endFrame": 20
+            },
+            {
+              "id": "token-1",
+              "text": "esto",
+              "startFrame": 24,
+              "endFrame": 32
+            },
+            {
+              "id": "token-2",
+              "text": "solo",
+              "startFrame": 36,
+              "endFrame": 44
+            },
+            {
+              "id": "token-3",
+              "text": "es",
+              "startFrame": 48,
+              "endFrame": 56
+            }
+          ]
+        },
+        {
+          "id": "line-1",
+          "startFrame": 60,
+          "endFrame": 111,
+          "tokens": [
+            {
+              "id": "token-4",
+              "text": "el",
+              "startFrame": 60,
+              "endFrame": 68
+            },
+            {
+              "id": "token-5",
+              "text": "principio.",
+              "startFrame": 72,
+              "endFrame": 80
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
