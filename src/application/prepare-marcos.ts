@@ -4,6 +4,17 @@ import { paragraphs, headlines } from "../fixtures/marcos";
 import type { AlignmentProvider } from "../ports/alignment";
 import type { PreparedAudioSegment } from "../ports/prepared-audio";
 import { prepareCaptionLines } from "./captions";
+const narrationTheme = {
+  background: "#101116",
+  foreground: "#F4F4F0",
+  captionStyle: {
+    fontSize: 56,
+    textColor: "#FFFFFF",
+    activeTextColor: "#101116",
+    activeBackground: "#C6FF6B",
+    highlightActive: false,
+  },
+};
 // Preparation data is supplied by the local CLI, not loaded by the domain/renderer.
 export function createMarcosReel(
   preparation: { segments: PreparedAudioSegment[] },
@@ -29,17 +40,7 @@ export function createMarcosReel(
     renderProfileId: "instagram-reel-v1",
     defaultVoiceProfileId: marcosVoice.id,
     voiceProfiles: [marcosVoice],
-    theme: {
-      background: "#101116",
-      foreground: "#F4F4F0",
-      captionStyle: {
-        fontSize: 56,
-        textColor: "#FFFFFF",
-        activeTextColor: "#101116",
-        activeBackground: "#C6FF6B",
-        highlightActive: false,
-      },
-    },
+    theme: narrationTheme,
     scenes: preparation.segments.map((audio, i) => {
       const alignment = aligner.align({
         audio,
@@ -87,6 +88,7 @@ export function createMarcosReel(
           lines: prepareCaptionLines(
             alignment.tokens,
             audio.measuredDurationMs,
+            narrationTheme.captionStyle.fontSize,
           ),
         },
       };

@@ -1,5 +1,6 @@
 import { before, test } from "node:test";
 import assert from "node:assert/strict";
+import { captionCharBudget } from "../src/application/captions";
 import { readFile, readdir } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -140,12 +141,13 @@ test("estimated timing, lines, pauses and total snapshot obey the existing contr
       assert.equal(scene.narration.slice(t.charStart, t.charEnd), t.text);
       if (j) assert.ok(t.startMs >= scene.captions.tokens[j - 1].endMs);
     });
+    const budget = captionCharBudget(reel.theme.captionStyle.fontSize);
     for (const l of scene.captions.lines) {
       const words = l.tokenIds.map(
         (id) => scene.captions.tokens.find((t) => t.id === id)!.text,
       );
       assert.ok(words.length <= 4);
-      assert.ok(words.join(" ").length <= 26);
+      assert.ok(words.join(" ").length <= budget);
     }
   }
   const lastLine = snapshot.scenes[0].lines.at(-1)!;

@@ -23,6 +23,17 @@ import {
 } from "../ports/recorded-narration";
 import type { AlignmentProvider } from "../ports/alignment";
 import { prepareCaptionLines } from "./captions";
+const narrationTheme = {
+  background: "#101116",
+  foreground: "#F4F4F0",
+  captionStyle: {
+    fontSize: 56,
+    textColor: "#FFFFFF",
+    activeTextColor: "#101116",
+    activeBackground: "#C6FF6B",
+    highlightActive: false,
+  },
+};
 import {
   AssetRequirementSchema,
   HashSchema,
@@ -300,6 +311,7 @@ export function prepareProductionReel(
         lines: prepareCaptionLines(
           alignment.tokens,
           segment.measuredDurationMs,
+          narrationTheme.captionStyle.fontSize,
         ),
       },
       delta: durationDelta(
@@ -322,17 +334,7 @@ export function prepareProductionReel(
     importHash: recordingImportHash(recording),
     scenes,
     assetRequirements: plan.assetRequirements,
-    theme: {
-      background: "#101116",
-      foreground: "#F4F4F0",
-      captionStyle: {
-        fontSize: 56,
-        textColor: "#FFFFFF",
-        activeTextColor: "#101116",
-        activeBackground: "#C6FF6B",
-        highlightActive: false,
-      },
-    },
+    theme: narrationTheme,
     renderProfileId: "instagram-reel-v1",
     delta: durationDelta(
       plan.draft.targetDurationMs,

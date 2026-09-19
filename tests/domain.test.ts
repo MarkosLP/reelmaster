@@ -8,6 +8,7 @@ import {
 } from "../src/snapshot/compile";
 import { contentHash } from "../src/snapshot/hash";
 import { lineAt, opacityAt } from "../src/composition/timing";
+import { captionCharBudget } from "../src/application/captions";
 test("ms conversion uses the supplied FPS and a shared rounding rule", () => {
   assert.equal(msToFrames(1000, 30), 30);
   assert.equal(msToFrames(1000, 60), 60);
@@ -147,4 +148,13 @@ test("transition boundaries exhaustively stay renderable for every quantized fad
         );
     }
   }
+});
+test("the caption budget follows the caption font size instead of a fixed 26 characters", () => {
+  // 26 era el límite fijo anterior; es el que corresponde al tamaño de la demo.
+  assert.equal(captionCharBudget(49), 26);
+  assert.equal(captionCharBudget(56), 23);
+  assert.equal(captionCharBudget(72), 18);
+  assert.ok(captionCharBudget(24, 1200) > captionCharBudget(24));
+  for (let fontSize = 24; fontSize < 72; fontSize++)
+    assert.ok(captionCharBudget(fontSize) >= captionCharBudget(fontSize + 1));
 });
