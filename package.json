@@ -17,6 +17,8 @@
     "render:production": "node --import ./scripts/local-only.mjs --import tsx scripts/render-production.ts",
     "render:presenter": "node --import ./scripts/local-only.mjs --import tsx scripts/render-presenter.ts",
     "review:presenter": "node --import ./scripts/local-only.mjs --import tsx scripts/review-presenter.ts",
+    "app": "node --import ./scripts/local-only.mjs --import tsx scripts/app.ts",
+    "clean:workspace": "node --import ./scripts/local-only.mjs --import tsx scripts/clean-workspace.ts",
     "generate:reel": "node --import ./scripts/local-only.mjs --import tsx scripts/generate-reel.ts",
     "test:integration:text": "node --import ./scripts/local-only.mjs --import tsx scripts/integration-text.ts",
     "test": "node --import ./scripts/local-only.mjs --import ./scripts/test-environment.mjs --import tsx --test tests/*.test.ts",

@@ -190,7 +190,7 @@ test("the plan travels to the page with the hashes it will be judged against", a
 });
 
 test("an incoherent verdict is refused and nothing is written", async () => {
-  const response = await fetch(`${server.url}review`, {
+  const response = await fetch(`${server.url}verdict`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...verdict, issues: ["pacing"] }),
@@ -201,7 +201,7 @@ test("an incoherent verdict is refused and nothing is written", async () => {
 });
 
 test("a saved verdict is sealed against the plan and the video that were watched", async () => {
-  const response = await fetch(`${server.url}review`, {
+  const response = await fetch(`${server.url}verdict`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(verdict),

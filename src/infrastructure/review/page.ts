@@ -149,7 +149,7 @@ function chosen(){
 function send(decision){
   var out=document.getElementById("out");
   out.style.color="var(--muted)";out.textContent="Guardando…";
-  fetch("review",{
+  fetch("verdict",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({

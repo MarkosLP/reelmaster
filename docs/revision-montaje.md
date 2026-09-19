@@ -1,4 +1,6 @@
-# Revisión de montaje
+# La app local y la revisión de montaje
+
+`npm run app` abre la biblioteca: las entregas de `out/` con su estado, y las producciones con trabajo real. Desde una entrega con plan se entra a la pantalla de revisión que describe el resto de este documento. La misma pantalla está disponible suelta con `review:presenter`.
 
 Primera superficie de interfaz del proyecto. Cierra el paso que quedaba abierto al final de 1K: aprobar o rechazar un montaje exigía ver el MP4 por fuera y editar JSON a mano.
 

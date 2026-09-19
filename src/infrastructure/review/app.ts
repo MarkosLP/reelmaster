@@ -1,0 +1,155 @@
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { randomBytes } from "node:crypto";
+import { resolve } from "node:path";
+import { atomicJson, privateRoot } from "../production/local-files";
+import { PresenterEditReviewSchema } from "../../domain/presenter-edit-review";
+import { discoverReels, discoverProductions, type Reel } from "./library";
+import { indexPage } from "./index-page";
+import { reviewPage } from "./page";
+import {
+  LOOPBACK_ORIGIN,
+  baseHeaders,
+  readBody,
+  sameToken,
+  sendJson,
+  sendMedia,
+  sendPage,
+} from "./http";
+
+const MAX_BODY_BYTES = 64 * 1024;
+
+export async function reelApp(options: {
+  workspace: string;
+  reviewer: string;
+}) {
+  const reels = await discoverReels(options.workspace);
+  const productions = await discoverProductions(options.workspace);
+  const reviewsRoot = await privateRoot(options.workspace, "reviews");
+  const byId = new Map<string, Reel>(reels.map((r) => [r.id, r]));
+  const loaded = new Map<string, Buffer>();
+  const token = randomBytes(24).toString("hex");
+  const prefix = `/${token}/`;
+
+  async function videoOf(reel: Reel) {
+    let bytes = loaded.get(reel.id);
+    if (!bytes) {
+      bytes = await readFile(reel.videoPath);
+      loaded.set(reel.id, bytes);
+    }
+    return bytes;
+  }
+
+  const server = createServer((req, res) => {
+    const url = req.url ?? "";
+    if (
+      !url.startsWith(prefix) ||
+      !sameToken(url.slice(1, 1 + token.length), token)
+    ) {
+      res.writeHead(404).end();
+      return;
+    }
+    const origin = req.headers.origin;
+    if (origin && !LOOPBACK_ORIGIN.test(origin)) {
+      res.writeHead(403).end();
+      return;
+    }
+    baseHeaders(res);
+    const route = decodeURIComponent(url.slice(prefix.length).split("?")[0]);
+
+    void (async () => {
+      try {
+        if (route === "" || route === "index.html")
+          return sendPage(req, res, indexPage());
+
+        if (route === "api/library.json")
+          return sendJson(req, res, {
+            reviewer: options.reviewer,
+            productions,
+            reels: reels.map((r) => ({
+              id: r.id,
+              phase: r.phase,
+              name: r.id.split("/")[1],
+              bytes: r.bytes,
+              durationSeconds: r.durationSeconds,
+              width: r.width,
+              height: r.height,
+              plan: Boolean(r.plan),
+              review: r.review,
+            })),
+          });
+
+        const match = /^r\/(.+?)\/(video\.mp4|review|plan\.json|verdict)$/.exec(
+          route,
+        );
+        if (!match) return void res.writeHead(404).end();
+        const reel = byId.get(match[1]);
+        if (!reel) return void res.writeHead(404).end();
+
+        if (match[2] === "video.mp4")
+          return sendMedia(req, res, await videoOf(reel), "video/mp4");
+
+        if (!reel.plan || !reel.planHash) return void res.writeHead(404).end();
+
+        if (match[2] === "review") return sendPage(req, res, reviewPage());
+
+        if (match[2] === "plan.json")
+          return sendJson(req, res, {
+            plan: reel.plan,
+            planHash: reel.planHash,
+            videoHash: reel.videoHash,
+            reviewer: options.reviewer,
+            review: reel.review,
+          });
+
+        if (req.method !== "POST") return void res.writeHead(405).end();
+        const body: unknown = JSON.parse(await readBody(req, MAX_BODY_BYTES));
+        const review = PresenterEditReviewSchema.parse({
+          ...(body as Record<string, unknown>),
+          version: 1,
+          planHash: reel.planHash,
+          videoHash: reel.videoHash,
+          sourceHash: reel.plan.sourceHash,
+          durationFrames: reel.plan.durationFrames,
+          watched: true,
+          reviewer: { kind: "human", name: options.reviewer },
+          reviewedAt: new Date().toISOString(),
+        });
+        const path = resolve(reviewsRoot, `${reel.planHash}.json`);
+        await atomicJson(path, review);
+        reel.review = review;
+        return sendJson(req, res, { path, decision: review.decision });
+      } catch (error) {
+        if (res.headersSent) return;
+        sendJson(
+          req,
+          res,
+          {
+            error: error instanceof Error ? error.message : "Petición inválida",
+          },
+          400,
+        );
+      }
+    })();
+  });
+
+  await new Promise<void>((ok, fail) => {
+    server.once("error", fail);
+    server.listen(0, "127.0.0.1", ok);
+  });
+  const address = server.address();
+  if (!address || typeof address === "string")
+    throw new Error("Missing loopback address");
+  return {
+    url: `http://127.0.0.1:${address.port}${prefix}`,
+    reels,
+    productions,
+    close: async () => {
+      server.closeAllConnections();
+      await new Promise<void>((ok, fail) =>
+        server.close((e) => (e ? fail(e) : ok())),
+      );
+      loaded.clear();
+    },
+  };
+}

@@ -58,7 +58,7 @@ export async function presenterReviewServer(options: {
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Content-Type-Options", "nosniff");
 
-    if (req.method === "POST" && route === "review") {
+    if (req.method === "POST" && route === "verdict") {
       const chunks: Buffer[] = [];
       let total = 0;
       req.on("data", (chunk: Buffer) => {

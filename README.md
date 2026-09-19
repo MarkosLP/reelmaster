@@ -111,6 +111,16 @@ Entrada y salida deben quedar dentro de `.local/`, resueltas con `realpath`. El 
 
 La revisión del texto por una persona **no** convierte sus tiempos en alineación humana: los captions siguen etiquetados `MODEL_ESTIMATED_HUMAN_TEXT`. La verificación registrada cubre decodificación, sincronía, loudness, ausencia de frames negros y correspondencia de captions; la escucha humana sigue pendiente.
 
+## La app
+
+```powershell
+npm run app
+```
+
+Abre una URL de loopback con la biblioteca: las entregas de `out/` con su duración, resolución y estado de revisión, y las producciones con trabajo real. Desde ahí se entra a revisar el montaje que tenga plan.
+
+`npm run clean:workspace` informa del residuo de tests y de los artefactos regenerables; con `--apply` los borra. Nunca toca una producción en estado `rendered` o `prepared`.
+
 ## Revisión de montaje
 
 Primera superficie de interfaz. Cierra el paso que 1K dejó abierto: aprobar o rechazar un montaje exigía ver el MP4 por fuera y editar JSON a mano. [Contrato y límites](docs/revision-montaje.md).
