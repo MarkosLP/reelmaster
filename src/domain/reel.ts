@@ -19,7 +19,7 @@ export const AudioSchema = z
       })
       .strict()
       .optional(),
-    mimeType: z.enum(["audio/wav", "audio/mpeg"]),
+    mimeType: z.literal("audio/wav"),
     volume: z.number().min(0).max(1),
   })
   .strict()

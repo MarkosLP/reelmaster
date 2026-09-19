@@ -149,6 +149,19 @@ test("transition boundaries exhaustively stay renderable for every quantized fad
     }
   }
 });
+test("the audio contract is WAV from the domain to the private server", () => {
+  const mpeg = structuredClone(demo) as unknown as {
+    scenes: { audio: { mimeType: string } }[];
+  };
+  mpeg.scenes[0].audio.mimeType = "audio/mpeg";
+  assert.equal(ReelSchema.safeParse(mpeg).success, false);
+  const mp3 = structuredClone(assets) as Record<
+    string,
+    { path: string; contentHash: string }
+  >;
+  mp3["voice-0"].path = "audio/scene-0.mp3";
+  assert.throws(() => compileCompositionSnapshot(demo, mp3));
+});
 test("the caption budget follows the caption font size instead of a fixed 26 characters", () => {
   // 26 era el límite fijo anterior; es el que corresponde al tamaño de la demo.
   assert.equal(captionCharBudget(49), 26);

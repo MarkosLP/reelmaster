@@ -29,7 +29,7 @@ export function compileCompositionSnapshot(
     if (
       !asset ||
       asset.contentHash !== s.audio.contentHash ||
-      !/^audio\/[a-zA-Z0-9_-]+\.(wav|mp3)$/.test(asset.path)
+      !/^audio\/[a-zA-Z0-9_-]+\.wav$/.test(asset.path)
     )
       throw new Error("Missing, stale or unsafe audio asset");
     const startFrame = msToFrames(elapsedMs, profile.fps);
