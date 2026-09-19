@@ -14,7 +14,7 @@ import { hostname } from "node:os";
 import { ProductionError } from "../../application/production-plan";
 export async function privateRoot(
   workspace: string,
-  area: "productions" | "recordings",
+  area: "productions" | "recordings" | "reviews",
 ) {
   const workspacePath = await realpath(workspace);
   const root = resolve(workspacePath, ".local", area);

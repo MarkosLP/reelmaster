@@ -111,6 +111,18 @@ Entrada y salida deben quedar dentro de `.local/`, resueltas con `realpath`. El 
 
 La revisión del texto por una persona **no** convierte sus tiempos en alineación humana: los captions siguen etiquetados `MODEL_ESTIMATED_HUMAN_TEXT`. La verificación registrada cubre decodificación, sincronía, loudness, ausencia de frames negros y correspondencia de captions; la escucha humana sigue pendiente.
 
+## Revisión de montaje
+
+Primera superficie de interfaz. Cierra el paso que 1K dejó abierto: aprobar o rechazar un montaje exigía ver el MP4 por fuera y editar JSON a mano. [Contrato y límites](docs/revision-montaje.md).
+
+```powershell
+npm run review:presenter -- --plan .local/phase-1k/edit-plan.json --video out/phase-1k/reel-1k-marcos.mp4
+```
+
+Abre una URL de loopback con token; la página muestra el montaje, los cortes con su motivo y los subtítulos, todo navegable. El veredicto se sella en `.local/reviews/<planHash>.json`, atado a los hashes del plan y del vídeo que se miraron.
+
+Es una pantalla de revisión, no un editor: no cambia cortes ni vuelve a renderizar. Y aprobar aquí **no** convierte los tiempos en alineación humana; los captions siguen siendo `MODEL_ESTIMATED_HUMAN_TEXT`.
+
 ## Auditoría externa
 
 Revisión independiente del 19/09/2026 y registro de los arreglos aplicados: [auditoría](docs/auditoria-2026-09-19.md) · [arreglos](docs/auditoria-2026-09-19-arreglos.md).
