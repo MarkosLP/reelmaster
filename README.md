@@ -136,3 +136,7 @@ Es una pantalla de revisión, no un editor: no cambia cortes ni vuelve a renderi
 ## Auditoría externa
 
 Revisión independiente del 19/09/2026 y registro de los arreglos aplicados: [auditoría](docs/auditoria-2026-09-19.md) · [arreglos](docs/auditoria-2026-09-19-arreglos.md).
+
+## Referencia externa
+
+Estudio del canal de Víctor Heras (183 vídeos, 10 transcripciones) para contrastar las variantes de gancho contra la doctrina de alguien que vive de hacer crecer cuentas de Instagram. Es material de fuera con su procedencia etiquetada, no doctrina del proyecto: sirve para generar hipótesis que el registro de experimentos tendrá que medir. [Estudio y límites](docs/referencia-victor-heras.md).
